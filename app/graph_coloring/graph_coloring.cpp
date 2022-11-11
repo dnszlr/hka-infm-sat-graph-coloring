@@ -155,11 +155,9 @@ void adjacencyHaveDiffColor(Node node, int color, vector<vector<int>> clauses) {
 void atMostOne(Node node, int color, vector<vector<int>> clauses) {
     vector<int> newClause;
     for(int i = 1; i < color; i++) {
-        for(int j = i + 1; j <= color; j++) {
-            newClause.push_back(-1 * ((node.value * maxColors) + i));
-            newClause.push_back(-1 * ((node.value * maxColors) + j));
-            newClause.push_back(0);
-        }
+        newClause.push_back(-1 * ((node.value * maxColors) + i));
+        newClause.push_back(-1 * ((node.value * maxColors) + color));
+        newClause.push_back(0);
     }
     clauses.push_back(newClause);
 }
