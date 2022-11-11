@@ -107,42 +107,15 @@ void longestAdjacency(Graph *graph) {
     graph->longestAdjacency = max;
 }
 
-
-
-void getColoring(Graph &graph) {
-    bool notSatisfiable = false;
-    int color = 1;
-    vector<int> everyNodeGetsColorClauses;
-    vector<vector<int>> adjacencyHaveDiffColorClauses;
-    vector<vector<int>> atMostOneClauses;
-
-    
-    while(!notSatisfiable) {
-        for(Node node : graph.nodes) {
-            int baseValue = node.value * maxColors;
-            // Generate clauses for iteration
-            // Every node gets a color
-            everyNodeGetsColor(node, color, everyNodeGetsColorClauses);
-            // Adjacent nodes have diff color
-            adjacencyHaveDiffColor(node, color, adjacencyHaveDiffColorClauses);
-            // At-most-one
-            atMostOne(node, color, atMostOneClauses);
-
-            //TODO  Check if vectors really change otherwise just return
-        }
-        
-        color++;
-    }
-}
 // DONE
-void everyNodeGetsColor(Node node, int color, vector<int> clauses) {
+void everyNodeGetsColor(Node node, int color, vector<int> &clauses) {
     // To remove the existing 0 from the previous iteration
     clauses.pop_back();
     clauses.push_back((node.value * maxColors) + color);
     clauses.push_back(0);
 }
 
-void adjacencyHaveDiffColor(Node node, int color, vector<vector<int>> clauses) {
+void adjacencyHaveDiffColor(Node node, int color, vector<vector<int>> &clauses) {
     vector<int> newClause;
     for(int adjaNode : node.adjacency) {
         newClause.push_back(-1 * ((node.value * maxColors) + color));
@@ -152,14 +125,37 @@ void adjacencyHaveDiffColor(Node node, int color, vector<vector<int>> clauses) {
     }
 }
 
-void atMostOne(Node node, int color, vector<vector<int>> clauses) {
+void atMostOne(Node node, int color, vector<vector<int>> &clauses) {
     vector<int> newClause;
     for(int i = 1; i < color; i++) {
         newClause.push_back(-1 * ((node.value * maxColors) + i));
         newClause.push_back(-1 * ((node.value * maxColors) + color));
         newClause.push_back(0);
+        clauses.push_back(newClause);
     }
-    clauses.push_back(newClause);
+}
+
+void getColoring(Graph &graph) {
+    bool notSatisfiable = false;
+    int color = 1;
+    // if no coloration was found or if the max amount of colors is not reached we can search for a new coloration
+    while(!notSatisfiable && color < maxColors) {
+        for(size_t i = 1; i < graph.nodes.size(); i++) {
+            // required to simulate the first ending 0 of the first clause
+            vector<int> everyNodeGetsColorClauses = {0};
+            vector<vector<int>> adjacencyHaveDiffColorClauses;
+            vector<vector<int>> atMostOneClauses;
+            // Generate clauses for iteration
+            // Every node gets a color
+            everyNodeGetsColor(graph.nodes[i], color, everyNodeGetsColorClauses);
+            // Adjacent nodes have diff color
+            adjacencyHaveDiffColor(graph.nodes[i], color, adjacencyHaveDiffColorClauses);
+            // At-most-one
+            atMostOne(graph.nodes[i], color, atMostOneClauses);
+            // TODO Add some clauses to ipasir
+        }
+        color++;
+    }
 }
 
 int main(int argc, char **argv) {
@@ -169,7 +165,6 @@ int main(int argc, char **argv) {
     printGraph(graph);
     // longestAdjacency(&graph);
     void* solver = ipasir_init();
-    printf("Min amount of colors needed is %li\n", graph.longestAdjacency + 1);
     // At the moment only a maximum amount of 10 colors is possible. Change if better idea.
     getColoring(graph);
 }
