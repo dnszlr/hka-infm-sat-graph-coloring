@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <map>
 #include <iostream>
 #include <cstring>
 extern "C" {
@@ -8,8 +9,6 @@ extern "C" {
 }
 
 using namespace std;
-
-# define maxColors 10
 
 struct Node {
     int value;
@@ -19,7 +18,8 @@ struct Node {
 };
 
 struct Graph {
-	long unsigned int longestAdjacency;
+    int amountOfNodes;
+    // int longestAdjacency;
     vector<Node> nodes;
 };
 
@@ -73,6 +73,8 @@ Graph graphInit(const char* filename) {
 			edge[i] = 0;
             size_t start, end;
             sscanf(edge, "e %lu %lu", &start , &end);
+            // TODO Refactor
+            // adds 0 node to the graph, makes working with the graph easier. start value = graph[start] and not start - 1
             while (graph.nodes.size() <= start) {
                 Node node;
 			    graph.nodes.push_back(node);
@@ -80,8 +82,18 @@ Graph graphInit(const char* filename) {
 		    graph.nodes[start].value = start;
             graph.nodes[start].color = 0;
             graph.nodes[start].adjacency.push_back(end);
+            // in case of coloring we have to generate a undirected graph, no matter what form the original graph has
+            while (graph.nodes.size() <= end) {
+                Node node;
+				graph.nodes.push_back(node);
+			}
+			graph.nodes[end].value = end;
+            graph.nodes[end].color = 0;
+            graph.nodes[end].adjacency.push_back(start);
         }
-    } 
+    }
+    // Since we push back Node 0 we have to ignore this one in the counting
+    graph.amountOfNodes = graph.nodes.size() - 1; 
     fclose(file);
     return graph;
 }
@@ -94,7 +106,7 @@ void printGraph(const Graph &graph) {
 		}
 	}
 }
-
+/**
 void longestAdjacency(Graph *graph) {
     long unsigned int max = 0;
     for (size_t i = 0; i < graph->nodes.size(); i++) {
@@ -106,56 +118,64 @@ void longestAdjacency(Graph *graph) {
 	}
     graph->longestAdjacency = max;
 }
-
-// DONE
-void everyNodeGetsColor(Node node, int color, vector<int> &clauses) {
+*/
+void everyNodeGetsColor(int key, vector<int> &clauses) {
     // To remove the existing 0 from the previous iteration
-    clauses.pop_back();
-    clauses.push_back((node.value * maxColors) + color);
+    if(!clauses.empty()) {
+        clauses.pop_back();
+    }
+    clauses.push_back(key);
     clauses.push_back(0);
 }
 
-void adjacencyHaveDiffColor(Node node, int color, vector<vector<int>> &clauses) {
+void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     vector<int> newClause;
-    for(int adjaNode : node.adjacency) {
-        newClause.push_back(-1 * ((node.value * maxColors) + color));
-        newClause.push_back(-1 * ((adjaNode * maxColors) + color));
+    for(int adjaNode : adjacency) {
+        newClause.push_back(-1 * key);
+        newClause.push_back(-1 * (adjaNode + ((color - 1) * maxNodes)));
         newClause.push_back(0);
         clauses.push_back(newClause);
     }
 }
 
-void atMostOne(Node node, int color, vector<vector<int>> &clauses) {
-    vector<int> newClause;
+void atMostOne(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     for(int i = 1; i < color; i++) {
-        newClause.push_back(-1 * ((node.value * maxColors) + i));
-        newClause.push_back(-1 * ((node.value * maxColors) + color));
+        vector<int> newClause;
+        newClause.push_back(-1 * key);
+        newClause.push_back(-1 * (key - (i * maxNodes)));
         newClause.push_back(0);
         clauses.push_back(newClause);
     }
 }
 
 void getColoring(Graph &graph) {
+    // key, node, color
+    map<int, vector<int>> variables;
     bool notSatisfiable = false;
     int color = 1;
+    int key = 1;
+    // nodes.size() - 1 because we add the 0 node to the graph so we have to ignore it here.
     // if no coloration was found or if the max amount of colors is not reached we can search for a new coloration
-    while(!notSatisfiable && color < maxColors) {
+    while(!notSatisfiable && color <= 4) {
         for(size_t i = 1; i < graph.nodes.size(); i++) {
+            variables.insert({key, vector<int>{graph.nodes[i].value, color}});
             // required to simulate the first ending 0 of the first clause
-            vector<int> everyNodeGetsColorClauses = {0};
+            vector<int> everyNodeGetsColorClauses;
             vector<vector<int>> adjacencyHaveDiffColorClauses;
             vector<vector<int>> atMostOneClauses;
             // Generate clauses for iteration
             // Every node gets a color
-            everyNodeGetsColor(graph.nodes[i], color, everyNodeGetsColorClauses);
+            everyNodeGetsColor(key, everyNodeGetsColorClauses);
             // Adjacent nodes have diff color
-            adjacencyHaveDiffColor(graph.nodes[i], color, adjacencyHaveDiffColorClauses);
+            adjacencyHaveDiffColor(graph.nodes[i].adjacency, graph.amountOfNodes, key, color, adjacencyHaveDiffColorClauses);
             // At-most-one
-            atMostOne(graph.nodes[i], color, atMostOneClauses);
-            // TODO Add some clauses to ipasir
+            atMostOne(graph.amountOfNodes, key, color, atMostOneClauses);
+            // TODO Add clauses to ipasir
+            key++;
         }
         color++;
     }
+    printf("---");
 }
 
 int main(int argc, char **argv) {
@@ -164,7 +184,7 @@ int main(int argc, char **argv) {
     Graph graph = graphInit(filename);
     printGraph(graph);
     // longestAdjacency(&graph);
-    void* solver = ipasir_init();
+    // void* solver = ipasir_init();
     // At the moment only a maximum amount of 10 colors is possible. Change if better idea.
     getColoring(graph);
 }
