@@ -33,7 +33,7 @@ char* concatFilepath(const char* filename) {
 
 void createNodes(int node, int neighbour, Graph &graph) {
     size_t max = node > neighbour ? node : neighbour;
-    // adds 0 node to the graph, makes working with the graph easier. start value = graph[start] and not [start - 1]
+    // adds 0 node to the graph, makes working with the graph easier. node value = graph[node] and not [node - 1]
     while (graph.nodes.size() <= max) {
         Node node;
 	    graph.nodes.push_back(node);
@@ -87,8 +87,6 @@ Graph graphInit(const char* filename) {
             size_t start, end;
             sscanf(edge, "e %lu %lu", &start , &end);
             createNodes(start, end, graph);
-            // in case of coloring we have to generate a undirected graph, no matter what form the original graph has
-            // createNodes(end, start, graph);
         }
     }
     // Since we push back Node 0 we have to ignore this one in the counting
@@ -105,14 +103,14 @@ void printGraph(const Graph &graph) {
 		}
 	}
 }
-// Man muss die alten Klauseln erweitern
+
 void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     // Find the origin value for a given key
     size_t origin = (key - ((color - 1) * maxNodes)) - 1;
     while(clauses.size() <= origin) {
         clauses.push_back(vector<int>());
     }
-    // To remove the existing 0 from the previous iteration
+    // To remove the existing 0 and assumption from the previous iteration
     if(!clauses[origin].empty()) {
         clauses[origin].pop_back();
         clauses[origin].pop_back();
@@ -122,7 +120,7 @@ void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &c
     clauses[origin].push_back(key + (50 * maxNodes));
     clauses[origin].push_back(0);
 }
-// Man muss einfach neue Klauseln erstellen und dem Solver übergeben
+
 void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     for(int adjaNode : adjacency) {
         vector<int> newClause;
@@ -132,7 +130,7 @@ void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int co
         clauses.push_back(newClause);
     }
 }
-// Stimmt so, lediglich einfach immer ein neuen Vector erstellen?
+
 void atMostOne(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     for(int i = 1; i < color; i++) {
         vector<int> newClause;
@@ -172,7 +170,6 @@ void getColoring(Graph &graph, void * solver) {
     vector<vector<int>> adjacencyHaveDiffColorClauses;
         vector<vector<int>> atMostOneClauses;
     // if no coloration was found or if the max amount of colors is not reached we can search for a new coloration
-    // TODO Remove 4, only for dev reasons while no solver is included
     while(!satisfiable) {
         printf("Color is %i: \n", color);
         // Vectors hold the clauses for each color iteration
@@ -194,9 +191,13 @@ void getColoring(Graph &graph, void * solver) {
         int result = ipasir_solve(solver);
         printf("The result of solve is %i: \n", result);
         satisfiable = result == 10;
-        color++;
+        color = satisfiable ? color : color + 1;
     }
     printf("---");
+}
+
+void printOutResult(void * solver) {
+    
 }
 
 int main(int argc, char **argv) {
@@ -207,5 +208,5 @@ int main(int argc, char **argv) {
     void* solver = ipasir_init();
     // At the moment only a maximum amount of 10 colors is possible. Change if better idea.
     getColoring(graph, solver);
-    // getColoring(graph);
+    printOutResult(solver);
 }
