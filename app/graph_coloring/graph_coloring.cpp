@@ -117,7 +117,8 @@ void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &c
     }
     clauses[origin].push_back(key);
     // Assumption
-    clauses[origin].push_back(key + (50 * maxNodes));
+    // TODO should be dynamic for max amount of colors
+    clauses[origin].push_back(key + (21 * maxNodes));
     clauses[origin].push_back(0);
 }
 
@@ -160,7 +161,7 @@ void getAssumption(void * solver, vector<vector<int>> everyNodeGetsColorClauses)
 }
 
 
-void getColoring(Graph &graph, void * solver) {
+map<int, vector<int>> getColoring(Graph &graph, void * solver) {
     // map <key, <node, color>>
     map<int, vector<int>> variables;
     bool satisfiable = false;
@@ -193,10 +194,85 @@ void getColoring(Graph &graph, void * solver) {
         satisfiable = result == 10;
         color = satisfiable ? color : color + 1;
     }
-    printf("---");
+    return variables;
 }
 
-void printOutResult(void * solver) {
+string colorDecoding(int colorValue) {
+    string color;
+    switch(colorValue) {
+        case 1:
+            color = "Yellow";
+            break;
+        case 2:
+            color = "Red";
+            break;
+        case 3:
+            color = "Green";
+            break;
+        case 4:
+            color = "Purple";
+            break;
+        case 5:
+            color = "Blue";
+            break;
+        case 6:
+            color = "Maroon";
+            break;
+        case 7:
+            color = "Lime";
+            break;
+        case 8:
+            color = "Gold";
+            break;
+        case 9:
+            color = "Aqua";
+            break;
+        case 10:
+            color = "Teal";
+            break;
+        case 11:
+            color = "Olive";
+            break;
+        case 12:
+            color = "Navy";
+            break;
+        case 13:
+            color = "Violet";
+            break;
+        case 14:
+            color = "Fuchsia";
+            break;
+        case 15:
+            color = "Indigo";
+            break;
+        case 16:
+            color = "Cyan";
+            break;
+        case 17:
+            color = "Tomato";
+            break;
+        case 18:
+            color = "Turquoise";
+            break;
+        case 19:
+            color = "White";
+            break;
+        case 20:
+            color = "Black";
+            break;
+        default:
+            color = "Ups, something went wrong!";
+    }
+    return color;
+}
+
+void printOutResult(map<int, vector<int>> variables, void * solver) {
+    for(auto entry : variables) {
+        int value = ipasir_val(solver, entry.first);
+        if(value > 0) {
+            printf("Node %i has color %s\n", entry.second[0], colorDecoding(entry.second[1]).c_str());
+        }
+    }
     
 }
 
@@ -207,6 +283,6 @@ int main(int argc, char **argv) {
     printGraph(graph);
     void* solver = ipasir_init();
     // At the moment only a maximum amount of 10 colors is possible. Change if better idea.
-    getColoring(graph, solver);
-    printOutResult(solver);
+    map<int, vector<int>> variables = getColoring(graph, solver);
+    printOutResult(variables, solver);
 }
