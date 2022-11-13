@@ -26,8 +26,7 @@ The program takes a single argument. If no argument is passed it takes the `./in
 
 | Option                             | Description                                                              |
 |------------------------------------|--------------------------------------------------------------------------|
-| `<graph file>`                     | Such graph files you can find in `./inputs`.                             |
-|                                    | You can create own graphs via the given format in the existing files.    |
+| `<graph file>`                     | Such graph files you can find in `./inputs`. <br/> You can create own graphs via the given format in the existing files.  | 
 
 ## Benchmarking
 
