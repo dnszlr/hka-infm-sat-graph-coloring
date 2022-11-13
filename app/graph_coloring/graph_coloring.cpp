@@ -49,8 +49,8 @@ void createNodes(int node, int neighbour, Graph &graph) {
 Graph graphInit(const char* filename) {
     // TODO Only for Debug reasons, remove if no more needed.
     if(filename == NULL) {
-        filename = (char*) "test.txt";
-        printf("test.txt was used because no Filename was passed to the program\n");
+        filename = (char*) "small.txt";
+        printf("small.txt was used because no Filename was passed to the program\n");
     }
     filename = concatFilepath(filename);
     FILE* file = fopen(filename, "r");
