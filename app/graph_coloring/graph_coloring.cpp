@@ -22,7 +22,9 @@ struct Graph {
     vector<Node> nodes;
 };
 
-
+/**
+ * Concat the given filename to the file directory.
+*/
 char* concatFilepath(const char* filename) {
     const char* base = "./inputs/";
     char* fullpath = (char*) malloc(sizeof(char) * 256);
@@ -31,6 +33,9 @@ char* concatFilepath(const char* filename) {
     return fullpath;
 }
 
+/**
+ * Creates the graph nodes for the given parameters.
+*/
 void createNodes(int node, int neighbour, Graph &graph) {
     size_t max = node > neighbour ? node : neighbour;
     // adds 0 node to the graph, makes working with the graph easier. node value = graph[node] and not [node - 1]
@@ -45,9 +50,10 @@ void createNodes(int node, int neighbour, Graph &graph) {
     graph.nodes[neighbour].value = neighbour;
 }
 
-
+/**
+ * Initializes the graph via the nodes and edges in the file.
+*/
 Graph graphInit(const char* filename) {
-    // TODO Only for Debug reasons, remove if no more needed.
     if(filename == NULL) {
         filename = (char*) "small.txt";
         printf("small.txt was used because no Filename was passed to the program\n");
@@ -95,6 +101,9 @@ Graph graphInit(const char* filename) {
     return graph;
 }
 
+/**
+ * Prints the graph
+*/
 void printGraph(const Graph &graph) {
     printf("Graph:\n");
 	for (size_t i = 0; i < graph.nodes.size(); i++) {
@@ -104,12 +113,10 @@ void printGraph(const Graph &graph) {
 	}
 }
 
-// TODO Maybe make a function that calculates the original key to the keys from current iteration
-// decode
-// key - ((colorIteration - 1) * (maxNodeValue * 2))
-// encode
-// nodeValue + ((colorIteration - 1) * (maxNodeValue * 2))
-
+/**
+ * Generates Clauses that every node gets a color 
+ * Format: (x1 OR x2 OR x3 .... OR xN)
+*/
 void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     // Find the origin value for a given key
     size_t origin = (key - ((color - 1) * (maxNodes * 2))) - 1;
@@ -128,6 +135,10 @@ void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &c
     clauses[origin].push_back(0);
 }
 
+/**
+ * Generates Clauses that every node and his adjacency nodes don't share the same color 
+ * Format: (-x1 OR -y1) AND (.. OR ..) AND ..
+*/
 void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     int doubleMaxNodes = maxNodes * 2;
     for(int adjaNode : adjacency) {
@@ -139,6 +150,10 @@ void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int co
     }
 }
 
+/**
+ * Generates Clauses that every node has atleast one color 
+ * Format: (-x1 OR -x2) AND (-x1 OR -x3) AND (.. OR ..) AND ..
+*/
 void atMostOne(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     int doubleMaxNodes = maxNodes * 2;
     for(int i = 1; i < color; i++) {
@@ -150,6 +165,9 @@ void atMostOne(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
     }
 }
 
+/**
+ * Adds the given clauses to the sat solver for future calculations
+*/
 void addClausesToSolver(vector<vector<int>> clauses, void * solver) {
     for(vector<int> clause : clauses) {
         for(int index : clause) {
@@ -160,6 +178,9 @@ void addClausesToSolver(vector<vector<int>> clauses, void * solver) {
     }
 }
 
+/**
+ * Adds the generated Assumtions to the solver
+*/
 void getAssumption(void * solver, vector<vector<int>> everyNodeGetsColorClauses) {
     for(vector<int> clause : everyNodeGetsColorClauses) {
         // Not clause.size() - 1 because last element is always the zero
@@ -168,7 +189,10 @@ void getAssumption(void * solver, vector<vector<int>> everyNodeGetsColorClauses)
     }
 }
 
-
+/**
+ * Generates all clauses and returns the map with the <key, <node, color>> pairs. 
+ * With a key (variable) you can get the nodes in a later stage.
+*/
 map<int, vector<int>> getColoring(Graph &graph, void * solver) {
     // map <key, <node, color>>
     map<int, vector<int>> variables;
@@ -208,7 +232,9 @@ map<int, vector<int>> getColoring(Graph &graph, void * solver) {
     return variables;
 }
 
-// If needed more colors can be added, just helps with the representation
+/**
+ * Decodes a color value (int) to a String. Currently only 20 colors added, add more if needed.
+*/
 string colorDecoding(int colorValue) {
     string color;
     switch(colorValue) {
@@ -278,6 +304,9 @@ string colorDecoding(int colorValue) {
     return color;
 }
 
+/**
+ * Prints the result and the colors for the given graphs onto the console.
+*/
 void printOutResult(map<int, vector<int>> variables, void * solver) {
     for(auto entry : variables) {
         int value = ipasir_val(solver, entry.first);
