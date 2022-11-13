@@ -2,7 +2,7 @@
 
 Exercise 1 "Coloring by Incremental SAT Challenge" for sheet 1 in course "Practical SAT Solving" at Hochschule Karlsruhe
 
-## Task:
+## Task
 
 Implement an incremental SAT based graph vertex coloring solver in C or C++ using the IPASIR interface. Your application should take a single command line argument – a DIMACS file with a graph and find the smallest number of colors needed to color the graph. The application should print the number of colors required and the color of each vertex. 
 
