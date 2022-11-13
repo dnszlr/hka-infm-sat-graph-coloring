@@ -200,11 +200,11 @@ map<int, vector<int>> getColoring(Graph &graph, void * solver) {
     int color = 1;
     int key = 1;
     vector<vector<int>> everyNodeGetsColorClauses;
-    vector<vector<int>> adjacencyHaveDiffColorClauses;
-    vector<vector<int>> atMostOneClauses;
     // if no coloration was found we continue searching
     while(!satisfiable) {
         printf("Color is %i: \n", color);
+        vector<vector<int>> adjacencyHaveDiffColorClauses;
+    	vector<vector<int>> atMostOneClauses;
         for(size_t i = 1; i < graph.nodes.size(); i++) {
             variables.insert({key, vector<int>{graph.nodes[i].value, color}});
             // Generate clauses for iteration
