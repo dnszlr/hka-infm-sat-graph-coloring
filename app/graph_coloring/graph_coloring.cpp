@@ -285,7 +285,6 @@ void printOutResult(map<int, vector<int>> variables, void * solver) {
             printf("Node %i has color %s\n", entry.second[0], colorDecoding(entry.second[1]).c_str());
         }
     }
-    
 }
 
 int main(int argc, char **argv) {
