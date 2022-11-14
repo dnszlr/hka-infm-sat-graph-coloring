@@ -20,7 +20,7 @@ IPASIRSOLVER	?= picosat961
 #--------------------------------------------------------------------------#
 
 CC	?=	g++
-CFLAGS	?=	-Wall -DNDEBUG -O3
+CFLAGS	?=	-Wall -std=c++11 -DNDEBUG -O3
 
 DEPS	=	../../sat/$(IPASIRSOLVER)/libipasir$(IPASIRSOLVER).a
 
