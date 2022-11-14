@@ -1,4 +1,4 @@
-c FILE: anna.txt
+c FILE: small.txt
 p edge 4 4
 e 1 2
 e 1 3
