@@ -117,9 +117,9 @@ void printGraph(const Graph &graph) {
  * Generates Clauses that every node gets a color 
  * Format: (x1 OR x2 OR x3 .... OR xN)
 */
-void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
+void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &clauses, int assumptionOfIteration) {
     // Find the origin value for a given key
-    size_t origin = (key - ((color - 1) * (maxNodes * 2))) - 1;
+    size_t origin = key - ((color - 1) * (maxNodes + 1)) - 1;
     while(clauses.size() <= origin) {
         clauses.push_back(vector<int>());
     }
@@ -130,8 +130,8 @@ void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &c
     }
     clauses[origin].push_back(key);
     // Assumption variable (used to remove a this clause in a future iteration)
-    // printf("key+max %i \n", key + maxNodes);
-    clauses[origin].push_back(key + maxNodes);
+    clauses[origin].push_back(assumptionOfIteration);
+    // printf("EveryNodeGetsColor Assumption: %i\n", assumptionOfIteration);
     clauses[origin].push_back(0);
 }
 
@@ -140,11 +140,11 @@ void everyNodeGetsColor(int maxNodes, int key, int color, vector<vector<int>> &c
  * Format: (-x1 OR -y1) AND (.. OR ..) AND ..
 */
 void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int color, vector<vector<int>> &clauses) {
-    int doubleMaxNodes = maxNodes * 2;
+    int iterationValue = (color - 1) * (maxNodes + 1);
     for(int adjaNode : adjacency) {
         vector<int> newClause;
         newClause.push_back(-1 * key);
-        newClause.push_back(-1 * (adjaNode + ((color - 1) * doubleMaxNodes)));
+        newClause.push_back(-1 * (adjaNode + iterationValue));
         newClause.push_back(0);
         clauses.push_back(newClause);
     }
@@ -155,10 +155,10 @@ void adjacencyHaveDiffColor(vector<int> adjacency, int maxNodes, int key, int co
  * Format: (-x1 OR -x2) AND (-x1 OR -x3) AND (.. OR ..) AND ..
 */
 void atMostOne(int maxNodes, int key, int color, vector<vector<int>> &clauses) {
-    int doubleMaxNodes = maxNodes * 2;
+    int assumptionVariablePuffer = maxNodes + 1;
     for(int i = 1; i < color; i++) {
         vector<int> newClause;
-        newClause.push_back(-1 * (key - (i * doubleMaxNodes)));
+        newClause.push_back(-1 * (key - (i * assumptionVariablePuffer)));
         newClause.push_back(-1 * key);
         newClause.push_back(0);
         clauses.push_back(newClause);
@@ -181,12 +181,13 @@ void addClausesToSolver(vector<vector<int>> clauses, void * solver) {
 /**
  * Adds the generated Assumtions to the solver
 */
-void getAssumption(void * solver, vector<vector<int>> everyNodeGetsColorClauses) {
-    for(vector<int> clause : everyNodeGetsColorClauses) {
-        // Not clause.size() - 1 because last element is always the zero
-        ipasir_assume(solver, -1 * (clause[clause.size() - 2]));
-        // printf("Assumption is: %i: \n", -1 * (clause[clause.size() - 2]));
+void setAssumptions(void * solver, vector<int> &assumptions) {
+    for(size_t i = 0; i < assumptions.size() - 1; i++) {
+        ipasir_assume(solver, assumptions[i]);
+        // printf("Old Assumtions: %i\n", assumptions[i]);
     }
+    ipasir_assume(solver, -1 * (assumptions[assumptions.size() - 1]));
+    // printf("New assumtion: %i\n", assumptions[assumptions.size() -1]);
 }
 
 /**
@@ -200,35 +201,40 @@ map<int, vector<int>> getColoring(Graph &graph, void * solver) {
     int color = 1;
     int key = 1;
     vector<vector<int>> everyNodeGetsColorClauses;
+    vector<int> assumptions;
     // if no coloration was found we continue searching
     while(!satisfiable) {
         printf("Color is %i: \n", color);
         vector<vector<int>> adjacencyHaveDiffColorClauses;
     	vector<vector<int>> atMostOneClauses;
+        int assumptionofIteration = color * (graph.amountOfNodes + 1);
+        // Push the current iteration assumption variable to the ones of the previous iterations
+        assumptions.push_back(assumptionofIteration);
         for(size_t i = 1; i < graph.nodes.size(); i++) {
             variables.insert({key, vector<int>{graph.nodes[i].value, color}});
             // Generate clauses for iteration
             // Every node gets a color
-            everyNodeGetsColor(graph.amountOfNodes, key, color, everyNodeGetsColorClauses);
+            everyNodeGetsColor(graph.amountOfNodes, key, color, everyNodeGetsColorClauses, assumptionofIteration);
             // Adjacent nodes have diff color
             adjacencyHaveDiffColor(graph.nodes[i].adjacency, graph.amountOfNodes, key, color, adjacencyHaveDiffColorClauses);
             // At-most-one
             atMostOne(graph.amountOfNodes, key, color, atMostOneClauses);
             key++;
         }
+        setAssumptions(solver, assumptions);
         addClausesToSolver(everyNodeGetsColorClauses, solver);
         addClausesToSolver(adjacencyHaveDiffColorClauses, solver);
         addClausesToSolver(atMostOneClauses, solver);
-        getAssumption(solver, everyNodeGetsColorClauses);
         int result = ipasir_solve(solver);
         printf("The result of solve is %i: \n", result);
         satisfiable = result == 10;
-        color = satisfiable ? color : color + 1;
+        color++;
         // printf("key before %i \n", key);
         // All keys used for assumtions have to be skipped
-        key = key + graph.amountOfNodes;
+        key++;
         // printf("key after %i \n", key);
     }
+    printf("Solution found, %i colors needed to color the graph\n", color);
     return variables;
 }
 
